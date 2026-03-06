@@ -1,425 +1,3 @@
-// import bcrypt from 'bcrypt';
-// import jwt from 'jsonwebtoken';
-// import  { UserCollection } from '../models/user_model.js';
-// import { AuthCollection } from '../models/auth_model.js';
-// import { OtpCollection } from '../models/otp_model.js';
-// import { sendOtpEmail } from '../services/service.js';
-
-
-// // User Signup Controller
-// export const signup = async (req, res) => {
-//     try {
-//       const { name, email, password, role } = req.body;
-//       if (!name || !email || !password) {
-//         return res.status(400).json({
-//           success: false,
-//           message: "All fields are required"
-//         });
-//       }
-  
-//       const existingUser = await AuthCollection.findOne({ email });
-//       if (existingUser) {
-//         return res.status(400).json({
-//           success: false,
-//           message: "Email already registered"
-//         });
-//       }
-  
-//       const hashedPassword = await bcrypt.hash(password, 12);
-  
-//       const profile = await UserCollection.create({
-//         email,
-//         name
-//       });
-  
-//       await AuthCollection.create({
-//         name,
-//         email,
-//         password: hashedPassword,
-//         role: role || "delivery",
-//         user: profile._id
-//       });
-  
-//       return res.status(201).json({
-//         success: true,
-//         message: "User registered successfully"
-//       });
-  
-//     } catch (error) {
-//       return res.status(500).json({
-//         success: false,
-//         message: "Signup failed",
-//         error: error.message
-//       });
-//     }
-//   };
-
-
-// // User Signin & send opt Controller 
-// export const signin = async (req, res) => {
-//     try {
-//         const { email, password } = req.body;
-
-//         if (!email || !password) { // Validate input
-//             return res.status(400).json({
-//                 success: false,
-//                 message: "Email and password are required"
-//             });
-//         }
-
-//         const user = await AuthCollection.findOne({ email }); // Find user by email
-//         if (!user) {
-//             return res.status(401).json({
-//                 success: false,
-//                 message: "Invalid email or password"
-//             });
-//         }
-
-//         const isPasswordValid = await bcrypt.compare(password, user.password); // Check password
-//         if (!isPasswordValid) {
-//             return res.status(401).json({
-//                 success: false,
-//                 message: "Invalid email or password"
-//             });
-//         }
-
-//         const otp = String(Math.floor(100000 + Math.random() * 900000));// Generate 6-digit OTP
-//         const expiry = new Date(Date.now() + 3 * 60 * 1000); // 3 minutes
-
-//         await OtpCollection.findOneAndUpdate( // Store OTP in DB
-//             { email },
-//             { otp, expiry },
-//             { upsert: true, new: true }
-//         );
-
-//         await sendOtpEmail(email, otp); // Send OTP to email
-
-//         return res.status(200).json({ // Success response
-//             success: true,
-//             message: "OTP sent to email"
-//         });
-
-//     } catch (error) { // Error handling
-//         return res.status(500).json({
-//             success: false,
-//             message: "Signin failed",
-//             error: error.message
-//         });
-//     }
-// };
-
-
-// // verify OTP function
-// export const verifyOTP = async (req, res) => {
-//     try {
-//         const { email, otp } = req.body;
-
-//         if (!email || !otp) { // Input validation
-//             return res.status(400).json({
-//                 success: false,
-//                 message: "Email and OTP are required"
-//             });
-//         }
-
-//         const record = await OtpCollection.findOne({ email }); // Find OTP record
-
-//         if (!record) { // OTP existence check
-//             return res.status(400).json({
-//                 success: false,
-//                 message: "OTP not found or expired"
-//             });
-//         }
-
-//         if (record.expiry < new Date()) { // OTP expiry check
-//             await OtpCollection.deleteOne({ email });
-//             return res.status(400).json({
-//                 success: false,
-//                 message: "OTP expired"
-//             });
-//         }
-
-//         if (record.otp !== otp) { // OTP match check
-//             return res.status(400).json({
-//                 success: false,
-//                 message: "Invalid OTP"
-//             });
-//         }
-
-//         const user = await AuthCollection.findOne({ email }); // Find user
-//         if (!user) {
-//             return res.status(404).json({
-//                 success: false,
-//                 message: "User not found"
-//             });
-//         }
-
-     
-
-//         const token = jwt.sign(
-//             { 
-//               id: user._id, 
-//               email: user.email, 
-//               role: user.role   // 👈 YE ADD KARNA HAI
-//             },
-//             process.env.SECRET_KEY,
-//             { expiresIn: "1h" }
-//           );
-
-//         res.cookie("auth_token", token, { // Store token in cookie
-//             httpOnly: true,
-//             maxAge: 60 * 60 * 1000, // 1 hour
-//             secure: process.env.NODE_ENV === "production",
-//             sameSite: "strict"
-//         });
-
-//         await OtpCollection.deleteOne({ email }); //  Delete OTP record after successful verification
-
-//         return res.status(200).json({  // Success response
-//             success: true,
-//             message: "OTP verified successfully",
-//             token
-//         });
-
-//     } catch (err) { // Error handling
-//         return res.status(500).json({
-//             success: false,
-//             message: "OTP verification failed",
-//             error: err.message
-//         });
-//     }
-// };
-
-
-// // User signout Controller
-// export const signout = async (req, res) => {
-//     try {
-//         res.clearCookie("auth_token", { // Clear auth_token cookie
-//             httpOnly: true,
-//             secure: process.env.NODE_ENV === "production",
-//             sameSite: "strict"
-//         });
-
-//         return res.status(200).json({ // Success response
-//             success: true,
-//             message: "User signed out successfully"
-//         });
-
-//     } catch (error) {
-//         return res.status(500).json({ // Error handling
-//             success: false,
-//             message: "Signout failed",
-//             error: error.message
-//         });
-//     }
-// };
-
-
-// // user checkLoginStatus Controller
-// export const checkLoginStatus = async (req, res) => {
-//     try {
-//         const token = req.cookies.auth_token;
-
-//         if (!token) {
-//             return res.status(200).json({
-//                 loggedIn: false,
-//                 message: "User not logged in"
-//             });
-//         }
-
-//         const decoded = jwt.verify(token, process.env.SECRET_KEY);
-
-//         return res.status(200).json({
-//             loggedIn: true,
-//             message: "User is Already Logged In",
-//             user: {
-//                 id: decoded.id,
-//                 email: decoded.email,
-//                 role: decoded.role   // 👈 ADD THIS
-//             }
-//         });
-
-//     } catch (error) {
-//         return res.status(200).json({
-//             loggedIn: false,
-//             message: "Login First"
-//         });
-//     }
-// };
-
-// // user change password Controller
-// export const changePassword = async (req, res) => {
-//     try {
-//         const { email, oldPassword, newPassword } = req.body;
-
-
-//         if (!email || !oldPassword || !newPassword) { // Input validation
-//             return res.status(400).json({
-//                 success: false,
-//                 message: "Email, old password and new password are required"
-//             });
-//         }
-
-//         if (newPassword.length < 6) { // New password length check
-//             return res.status(400).json({
-//                 success: false,
-//                 message: "New password must be at least 6 characters"
-//             });
-//         }
-
-//         const user = await AuthCollection.findOne({ email }); // Find user by email
-//         if (!user) {
-//             return res.status(404).json({
-//                 success: false,
-//                 message: "User not found"
-//             });
-//         }
-
-//         const isOldPasswordValid = await bcrypt.compare(oldPassword, user.password); // Check old password
-//         if (!isOldPasswordValid) {
-//             return res.status(401).json({
-//                 success: false,
-//                 message: "Old password is incorrect"
-//             });
-//         }
-
-//         const isSamePassword = await bcrypt.compare(newPassword, user.password); // Check if new password is different
-//         if (isSamePassword) {
-//             return res.status(400).json({
-//                 success: false,
-//                 message: "New password must be different from old password"
-//             });
-//         }
-
-//         const hashedNewPassword = await bcrypt.hash(newPassword, 12); // Hash new password
-//         user.password = hashedNewPassword;
-//         await user.save();
-
-//         return res.status(200).json({ // Success response
-//             success: true,
-//             message: "Password changed successfully"
-//         });
-
-//     } catch (error) { // Error handling
-//         return res.status(500).json({
-//             success: false,
-//             message: "Change password failed",
-//             error: error.message
-//         });
-//     }
-// };
-
-
-// // forgot password Controller
-// export const forgotPassword = async (req, res) => {
-//     try {
-//         const { email } = req.body;
-
-//         if (!email) { // Input validation
-//             return res.status(400).json({
-//                 success: false,
-//                 message: "Email is required"
-//             });
-//         }
-
-//         const user = await AuthCollection.findOne({ email }); // Find user by email
-//         if (!user) {
-//             return res.status(404).json({
-//                 success: false,
-//                 message: "User not found"
-//             });
-//         }
-
-//         const otp = String(Math.floor(100000 + Math.random() * 900000)); // Generate 6-digit OTP
-//         const expiry = new Date(Date.now() + 3 * 60 * 1000); // 3 minutes
-
-//         await OtpCollection.findOneAndUpdate( // Store OTP in DB
-//             { email },
-//             { otp, expiry },
-//             { upsert: true, new: true }
-//         );
-
-//         await sendOTP(email, otp); // Send OTP to email
-
-//         return res.status(200).json({ // Success response
-//             success: true,
-//             message: "OTP sent to email"
-//         });
-
-//     } catch (error) { // Error handling
-//         return res.status(500).json({
-//             success: false,
-//             message: "Failed to send OTP",
-//             error: error.message
-//         });
-//     }
-// };
-
-// // change forgot password Controller
-// export const changeForgotPassword = async (req, res) => {
-//     try {
-//         const { email, otp, newPassword } = req.body;
-
-//         if (!email || !otp || !newPassword) { // Input validation
-//             return res.status(400).json({
-//                 success: false,
-//                 message: "Email, OTP and new password are required"
-//             });
-//         }
-
-//         const record = await OtpCollection.findOne({ email }); // Find OTP record
-
-//         if (!record) { // OTP existence check
-//             return res.status(400).json({
-//                 success: false,
-//                 message: "OTP not found or expired"
-//             });
-//         }
-
-//         if (record.expiry < new Date()) { // OTP expiry check
-//             await OtpCollection.deleteOne({ email });
-//             return res.status(400).json({
-//                 success: false,
-//                 message: "OTP expired"
-//             });
-//         }
-
-//         if (record.otp !== otp) { // OTP match check
-//             return res.status(400).json({
-//                 success: false,
-//                 message: "Invalid OTP"
-
-//             });
-//         }
-
-//         const user = await AuthCollection.findOne({ email }); // Find user
-//         if (!user) {
-//             return res.status(404).json({
-//                 success: false,
-//                 message: "User not found"
-//             });
-//         }
-
-//         const hashedNewPassword = await bcrypt.hash(newPassword, 12); // Hash new password
-//         user.password = hashedNewPassword;
-//         await user.save();
-
-//         await OtpCollection.deleteOne({ email }); // Delete OTP record after successful password change
-
-//         return res.status(200).json({ // Success response
-//             success: true,
-//             message: "Password changed successfully"
-//         });
-
-//     } catch (error) { // Error handling
-//         return res.status(500).json({
-//             success: false,
-//             message: "Failed to change password",
-//             error: error.message
-//         });
-//     }
-// };
-
-
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { UserCollection } from "../models/user_model.js";
@@ -428,12 +6,14 @@ import { OtpCollection } from "../models/ otp_model.js";
 import { sendOtpEmail } from "../services/service.js";
 
 
-// ================= SIGNUP =================
+// ================= SIGNUP (Admin creates employees) =================
 export const signup = async (req, res) => {
   try {
-
     const { name, email, phone, password, role } = req.body;
 
+    // Only admin can create new users
+    // For now, allow signup for admin, otherwise default to delivery
+    
     if (!name || !email || !phone || !password) {
       return res.status(400).json({
         success: false,
@@ -441,12 +21,14 @@ export const signup = async (req, res) => {
       });
     }
 
-    const existingUser = await AuthCollection.findOne({ email });
+    const existingUser = await AuthCollection.findOne({ 
+      $or: [{ email }, { phone }] 
+    });
 
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: "Email already exists"
+        message: "Email or phone already exists"
       });
     }
 
@@ -458,107 +40,117 @@ export const signup = async (req, res) => {
       phone
     });
 
+    // Determine role - default to delivery employee
+    const userRole = role === "admin" ? "admin" : "delivery";
+
     await AuthCollection.create({
       name,
       email,
       phone,
       password: hashedPassword,
-      role: role || "customer",
+      role: userRole,
       user: profile._id
     });
 
     res.status(201).json({
       success: true,
-      message: "User registered successfully"
+      message: `User registered successfully as ${userRole}`
     });
 
   } catch (error) {
-
     res.status(500).json({
       success: false,
       message: error.message
     });
-
   }
 };
 
 
-// ================= SIGNIN =================
+// ================= SIGNIN (Send OTP) =================
 export const signin = async (req, res) => {
-
   try {
+    const { email, phone } = req.body;
 
-    const { email, password } = req.body;
+    // Accept either email or phone
+    const loginField = email || phone;
+    
+    if (!loginField) {
+      return res.status(400).json({
+        success: false,
+        message: "Email or phone is required"
+      });
+    }
 
-    const user = await AuthCollection.findOne({ email });
+    // Find user by email or phone
+    const user = await AuthCollection.findOne({
+      $or: [{ email: loginField }, { phone: loginField }]
+    });
 
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: "Invalid email or password"
+        message: "User not found"
       });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
-
-    if (!isMatch) {
+    // Check if user is active
+    if (user.isActive === false) {
       return res.status(401).json({
         success: false,
-        message: "Invalid email or password"
+        message: "Account is deactivated. Contact admin."
       });
     }
 
-    // Skip OTP for testing - direct login
-    const token = jwt.sign({
-      id: user._id,
-      email: user.email,
-      role: user.role,
-      name: user.name
-    }, process.env.SECRET_KEY, {
-      expiresIn: "7d"
-    });
+    // Generate OTP
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    const expiry = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
-    res.cookie("auth_token", token, {
-      httpOnly: true,
-      maxAge: 7 * 24 * 60 * 60 * 1000
-    });
+    // Store OTP in database
+    await OtpCollection.findOneAndUpdate(
+      { email: user.email },
+      { otp, expiry, phone: user.phone },
+      { upsert: true, returnDocument: 'after' }
+    );
+
+    // Send OTP via email
+    await sendOtpEmail(user.email, otp);
+
+    // Also try to send SMS (if service available)
+    // await sendOtpSms(user.phone, otp);
 
     res.json({
       success: true,
-      message: "Login successful",
-      token,
-      user: {
-        email: user.email,
-        role: user.role,
-        name: user.name
-      }
+      message: "OTP sent to your email",
+      email: user.email // Return email for OTP verification
     });
 
   } catch (error) {
-
     res.status(500).json({
       success: false,
       message: error.message
     });
-
   }
-
 };
 
 
 // ================= VERIFY OTP =================
 export const verifyOTP = async (req, res) => {
-
   try {
-
     const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and OTP are required"
+      });
+    }
 
     const record = await OtpCollection.findOne({ email });
 
     if (!record) {
       return res.status(400).json({
         success: false,
-        message: "OTP expired"
+        message: "OTP not found or expired"
       });
     }
 
@@ -570,64 +162,133 @@ export const verifyOTP = async (req, res) => {
     }
 
     if (record.expiry < new Date()) {
+      await OtpCollection.deleteOne({ email });
       return res.status(400).json({
         success: false,
         message: "OTP expired"
       });
     }
 
-    await OtpCollection.deleteOne({ email });
-
+    // Find user
     const user = await AuthCollection.findOne({ email });
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
 
+    // Check if user is active
+    if (user.isActive === false) {
+      return res.status(401).json({
+        success: false,
+        message: "Account is deactivated"
+      });
+    }
+
+    // Generate JWT token
     const token = jwt.sign({
       id: user._id,
       email: user.email,
-      role: user.role
+      role: user.role,
+      name: user.name
     }, process.env.SECRET_KEY, {
-      expiresIn: "1h"
+      expiresIn: "7d"
     });
 
+    // Delete OTP after successful verification
+    await OtpCollection.deleteOne({ email });
+
+    // Set HTTP-only cookie
     res.cookie("auth_token", token, {
       httpOnly: true,
-      maxAge: 3600000
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      sameSite: "strict"
     });
 
     res.json({
       success: true,
-      message: "Login successful"
+      message: "Login successful",
+      token,
+      user: {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+        name: user.name,
+        phone: user.phone
+      }
     });
 
   } catch (error) {
-
     res.status(500).json({
       success: false,
       message: error.message
     });
-
   }
-
 };
 
 
-// ================= SIGNOUT =================
+// ================= RESEND OTP =================
+export const resendOTP = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required"
+      });
+    }
+
+    const user = await AuthCollection.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    // Generate new OTP
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    const expiry = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+
+    await OtpCollection.findOneAndUpdate(
+      { email },
+      { otp, expiry },
+      { upsert: true, returnDocument: 'after' }
+    );
+
+    await sendOtpEmail(email, otp);
+
+    res.json({
+      success: true,
+      message: "OTP resent successfully"
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+
+// ================= LOGOUT =================
 export const signout = (req, res) => {
-
   res.clearCookie("auth_token");
-
   res.json({
     success: true,
     message: "Logout successful"
   });
-
 };
 
 
-// ================= CHECK LOGIN =================
-export const checkLoginStatus = (req, res) => {
-
+// ================= CHECK LOGIN STATUS =================
+export const checkLoginStatus = async (req, res) => {
   try {
-
     const token = req.cookies.auth_token;
 
     if (!token) {
@@ -638,30 +299,49 @@ export const checkLoginStatus = (req, res) => {
 
     const decoded = jwt.verify(token, process.env.SECRET_KEY);
 
+    // Get fresh user data
+    const user = await AuthCollection.findById(decoded.id).select('-password');
+
+    if (!user || user.isActive === false) {
+      return res.json({
+        loggedIn: false
+      });
+    }
+
     res.json({
       loggedIn: true,
-      user: decoded
+      user: {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+        name: user.name,
+        phone: user.phone
+      }
     });
 
   } catch {
-
     res.json({
       loggedIn: false
     });
-
   }
-
 };
 
 
-// ================= CHANGE PASSWORD =================
+// ================= CHANGE PASSWORD (Authenticated User) =================
 export const changePassword = async (req, res) => {
-
   try {
+    const { oldPassword, newPassword } = req.body;
+    const token = req.cookies.auth_token;
 
-    const { email, oldPassword, newPassword } = req.body;
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: "Not authenticated"
+      });
+    }
 
-    const user = await AuthCollection.findOne({ email });
+    const decoded = jwt.verify(token, process.env.SECRET_KEY);
+    const user = await AuthCollection.findById(decoded.id);
 
     if (!user) {
       return res.status(404).json({
@@ -675,14 +355,12 @@ export const changePassword = async (req, res) => {
     if (!match) {
       return res.status(401).json({
         success: false,
-        message: "Old password incorrect"
+        message: "Current password is incorrect"
       });
     }
 
     const hashed = await bcrypt.hash(newPassword, 12);
-
     user.password = hashed;
-
     await user.save();
 
     res.json({
@@ -691,75 +369,79 @@ export const changePassword = async (req, res) => {
     });
 
   } catch (error) {
-
     res.status(500).json({
       success: false,
       message: error.message
     });
-
   }
-
 };
 
 
-// ================= FORGOT PASSWORD =================
+// ================= FORGOT PASSWORD (Send OTP) =================
 export const forgotPassword = async (req, res) => {
-
   try {
-
     const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required"
+      });
+    }
 
     const user = await AuthCollection.findOne({ email });
 
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found"
+      // Don't reveal if user exists
+      return res.json({
+        success: true,
+        message: "If email exists, OTP will be sent"
       });
     }
 
     const otp = String(Math.floor(100000 + Math.random() * 900000));
-
-    const expiry = new Date(Date.now() + 3 * 60 * 1000);
+    const expiry = new Date(Date.now() + 5 * 60 * 1000);
 
     await OtpCollection.findOneAndUpdate(
       { email },
-      { otp, expiry },
-      { upsert: true }
+      { otp, expiry, purpose: "password_reset" },
+      { upsert: true, returnDocument: 'after' }
     );
 
     await sendOtpEmail(email, otp);
 
     res.json({
       success: true,
-      message: "OTP sent to email"
+      message: "If email exists, OTP will be sent"
     });
 
   } catch (error) {
-
     res.status(500).json({
       success: false,
       message: error.message
     });
-
   }
-
 };
 
 
-// ================= CHANGE FORGOT PASSWORD =================
+// ================= RESET FORGOT PASSWORD =================
 export const changeForgotPassword = async (req, res) => {
-
   try {
-
     const { email, otp, newPassword } = req.body;
+
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Email, OTP and new password are required"
+      });
+    }
 
     const record = await OtpCollection.findOne({ email });
 
     if (!record) {
       return res.status(400).json({
         success: false,
-        message: "OTP not found"
+        message: "OTP not found or expired"
       });
     }
 
@@ -771,6 +453,7 @@ export const changeForgotPassword = async (req, res) => {
     }
 
     if (record.expiry < new Date()) {
+      await OtpCollection.deleteOne({ email });
       return res.status(400).json({
         success: false,
         message: "OTP expired"
@@ -792,12 +475,202 @@ export const changeForgotPassword = async (req, res) => {
     });
 
   } catch (error) {
-
     res.status(500).json({
       success: false,
       message: error.message
     });
-
   }
-
 };
+
+
+// ================= ADMIN: CREATE EMPLOYEE =================
+export const createEmployee = async (req, res) => {
+  try {
+    const { name, email, phone, password, role, designation, area } = req.body;
+
+    // Verify admin is making the request
+    const token = req.cookies.auth_token;
+    if (!token) {
+      return res.status(401).json({ success: false, message: "Not authenticated" });
+    }
+
+    const decoded = jwt.verify(token, process.env.SECRET_KEY);
+    if (decoded.role !== "admin") {
+      return res.status(403).json({ success: false, message: "Only admin can create employees" });
+    }
+
+    if (!name || !email || !phone || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "All fields are required"
+      });
+    }
+
+    const existingUser = await AuthCollection.findOne({
+      $or: [{ email }, { phone }]
+    });
+
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: "Email or phone already exists"
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    const profile = await UserCollection.create({
+      email,
+      name,
+      phone,
+      designation: designation || "Delivery Boy",
+      area
+    });
+
+    const userRole = role === "admin" ? "admin" : "delivery";
+
+    await AuthCollection.create({
+      name,
+      email,
+      phone,
+      password: hashedPassword,
+      role: userRole,
+      user: profile._id
+    });
+
+    res.status(201).json({
+      success: true,
+      message: `Employee created successfully as ${userRole}`
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+
+// ================= ADMIN: UPDATE EMPLOYEE =================
+export const updateEmployee = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, phone, designation, area, isActive } = req.body;
+
+    const token = req.cookies.auth_token;
+    if (!token) {
+      return res.status(401).json({ success: false, message: "Not authenticated" });
+    }
+
+    const decoded = jwt.verify(token, process.env.SECRET_KEY);
+    if (decoded.role !== "admin") {
+      return res.status(403).json({ success: false, message: "Only admin can update employees" });
+    }
+
+    const user = await AuthCollection.findById(id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "Employee not found" });
+    }
+
+    // Update auth collection
+    if (name) user.name = name;
+    if (phone) user.phone = phone;
+    if (isActive !== undefined) user.isActive = isActive;
+    await user.save();
+
+    // Update user profile
+    if (user.user) {
+      await UserCollection.findByIdAndUpdate(user.user, {
+        $set: { designation, area, updatedAt: new Date() }
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Employee updated successfully"
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+
+// ================= ADMIN: DELETE EMPLOYEE =================
+export const deleteEmployee = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const token = req.cookies.auth_token;
+    if (!token) {
+      return res.status(401).json({ success: false, message: "Not authenticated" });
+    }
+
+    const decoded = jwt.verify(token, process.env.SECRET_KEY);
+    if (decoded.role !== "admin") {
+      return res.status(403).json({ success: false, message: "Only admin can delete employees" });
+    }
+
+    const user = await AuthCollection.findById(id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "Employee not found" });
+    }
+
+    // Don't allow deleting admin
+    if (user.role === "admin") {
+      return res.status(400).json({ success: false, message: "Cannot delete admin" });
+    }
+
+    // Soft delete - deactivate instead of delete
+    user.isActive = false;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: "Employee deactivated successfully"
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+
+// ================= ADMIN: GET ALL EMPLOYEES =================
+export const getAllEmployees = async (req, res) => {
+  try {
+    const token = req.cookies.auth_token;
+    if (!token) {
+      return res.status(401).json({ success: false, message: "Not authenticated" });
+    }
+
+    const decoded = jwt.verify(token, process.env.SECRET_KEY);
+    if (decoded.role !== "admin") {
+      return res.status(403).json({ success: false, message: "Only admin can view employees" });
+    }
+
+    const employees = await AuthCollection.find({ role: "delivery" })
+      .select('-password')
+      .populate('user', 'designation area')
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      employees
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
