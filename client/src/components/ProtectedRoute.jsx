@@ -1,60 +1,35 @@
-// import { useContext } from "react";
-// import { Navigate } from "react-router-dom";
-// import { AuthContext } from "../context/AuthContext";
-
-// function ProtectedRoute({children}){
-
-//   const {user,loading} = useContext(AuthContext);
-
-//   if(loading) return <p>Loading...</p>;
-
-//   if(!user){
-//     return <Navigate to="/login"/>
-//   }
-
-//   return children;
-
-// }
-
-// export default ProtectedRoute;
-
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
-function ProtectedRoute({ children, role }) {
+function ProtectedRoute({ children, allowedRoles }) {
+  const { user, loading } = useAuth();
 
-const { user, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
-if (loading) {
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
 
-return <p>Loading...</p>;
+  // If allowedRoles is specified, check user role
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    // Redirect to appropriate dashboard based on role
+    if (user.role === "admin") {
+      return <Navigate to="/admin/dashboard" replace />;
+    } else if (user.role === "delivery") {
+      return <Navigate to="/delivery/dashboard" replace />;
+    } else {
+      return <Navigate to="/" replace />;
+    }
+  }
 
-}
-
-if (!user) {
-
-return <Navigate to="/login" />;
-
-}
-
-if (role && user.role !== role) {
-
-if (user.role === "admin") {
-
-return <Navigate to="/admin/dashboard" />;
-
-}
-
-if (user.role === "delivery") {
-
-return <Navigate to="/delivery/dashboard" />;
-
-}
-
-}
-
-return children;
-
+  return children;
 }
 
 export default ProtectedRoute;
+

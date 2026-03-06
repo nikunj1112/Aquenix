@@ -65,7 +65,7 @@ function App() {
         <Route
           path="/admin/dashboard"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={["admin"]}>
               <AdminLayout>
                 <Dashboard />
               </AdminLayout>
@@ -76,7 +76,7 @@ function App() {
         <Route
           path="/admin/customers"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={["admin"]}>
               <AdminLayout>
                 <Customers />
               </AdminLayout>
@@ -87,7 +87,7 @@ function App() {
         <Route
           path="/admin/orders"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={["admin"]}>
               <AdminLayout>
                 <Orders />
               </AdminLayout>
@@ -96,9 +96,20 @@ function App() {
         />
 
         <Route
+          path="/admin/deliveries"
+          element={
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <AdminLayout>
+                <Deliveries />
+              </AdminLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
           path="/admin/employees"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={["admin"]}>
               <AdminLayout>
                 <Employees />
               </AdminLayout>
@@ -109,7 +120,7 @@ function App() {
         <Route
           path="/admin/reports"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={["admin"]}>
               <AdminLayout>
                 <Reports />
               </AdminLayout>
@@ -120,7 +131,7 @@ function App() {
         <Route
           path="/admin/settings"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={["admin"]}>
               <AdminLayout>
                 <Settings />
               </AdminLayout>
@@ -135,7 +146,7 @@ function App() {
         <Route
           path="/delivery/dashboard"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={["delivery"]}>
               <DeliveryLayout>
                 <DeliveryDashboard />
               </DeliveryLayout>
@@ -146,7 +157,7 @@ function App() {
         <Route
           path="/delivery/orders"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={["delivery"]}>
               <DeliveryLayout>
                 <AssignedOrders />
               </DeliveryLayout>
@@ -157,7 +168,7 @@ function App() {
         <Route
           path="/delivery/tracking"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={["delivery"]}>
               <DeliveryLayout>
                 <DeliveryTracking />
               </DeliveryLayout>
@@ -168,7 +179,7 @@ function App() {
         <Route
           path="/delivery/customers"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={["delivery"]}>
               <DeliveryLayout>
                 <CustomerInfo />
               </DeliveryLayout>
@@ -179,7 +190,7 @@ function App() {
         <Route
           path="/delivery/profile"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={["delivery"]}>
               <DeliveryLayout>
                 <Profile />
               </DeliveryLayout>

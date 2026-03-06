@@ -1,22 +1,21 @@
 import mongoose from "mongoose";
 
 const authSchema = new mongoose.Schema({
-
+  name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
-
+  phone: { type: String, required: true },
   password: { type: String, required: true },
-
   role: {
     type: String,
-    enum: ["admin", "delivery"],
-    default: "delivery"
+    enum: ["admin", "delivery", "employee", "customer"],
+    default: "customer"
   },
-
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "users"
-  }
-
+  },
+  createdAt: { type: Date, default: Date.now }
 });
 
 export const AuthCollection = mongoose.model("auth", authSchema);
+

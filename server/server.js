@@ -8,6 +8,9 @@ import { connectDB } from "./config/db.js";
 // Routes
 import authRoutes from "./routes/auth_route.js";
 import profileRoutes from "./routes/ profile_route.js";
+import customerRoutes from "./routes/customer_route.js";
+import orderRoutes from "./routes/order_route.js";
+import deliveryRoutes from "./routes/delivery_route.js";
 
 // Load env variables
 dotenv.config();
@@ -30,7 +33,7 @@ app.use(cookieParser());
 // CORS configuration
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: ["http://localhost:5173", "http://localhost:3000"],
     credentials: true
   })
 );
@@ -40,6 +43,9 @@ app.use(
 
 app.use("/api/auth", authRoutes);
 app.use("/api/profile", profileRoutes);
+app.use("/api/customer", customerRoutes);
+app.use("/api/order", orderRoutes);
+app.use("/api/delivery", deliveryRoutes);
 
 
 // ================= TEST ROUTE =================

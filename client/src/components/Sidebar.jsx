@@ -1,31 +1,66 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import { 
+  FiHome, 
+  FiUsers, 
+  FiShoppingCart, 
+  FiTruck, 
+  FiUserCheck, 
+  FiBarChart2, 
+  FiSettings,
+  FiPackage
+} from "react-icons/fi";
 
-function Sidebar(){
+function Sidebar() {
+  const location = useLocation();
+  
+  const adminMenuItems = [
+    { path: "/admin/dashboard", label: "Dashboard", icon: <FiHome /> },
+    { path: "/admin/customers", label: "Customers", icon: <FiUsers /> },
+    { path: "/admin/orders", label: "Orders", icon: <FiShoppingCart /> },
+    { path: "/admin/deliveries", label: "Deliveries", icon: <FiTruck /> },
+    { path: "/admin/employees", label: "Employees", icon: <FiUserCheck /> },
+    { path: "/admin/reports", label: "Reports", icon: <FiBarChart2 /> },
+    { path: "/admin/settings", label: "Settings", icon: <FiSettings /> },
+  ];
 
-return(
+  const deliveryMenuItems = [
+    { path: "/delivery/dashboard", label: "Dashboard", icon: <FiHome /> },
+    { path: "/delivery/orders", label: "Assigned Orders", icon: <FiPackage /> },
+    { path: "/delivery/tracking", label: "Tracking", icon: <FiTruck /> },
+    { path: "/delivery/customers", label: "Customers", icon: <FiUsers /> },
+    { path: "/delivery/profile", label: "Profile", icon: <FiUserCheck /> },
+  ];
 
-<div className="sidebar">
+  // Determine which menu to show based on current path
+  const isDeliveryRoute = location.pathname.startsWith('/delivery');
+  const menuItems = isDeliveryRoute ? deliveryMenuItems : adminMenuItems;
 
-<h2>AQUENIX</h2>
-
-<ul>
-
-<li><Link to="/admin/dashboard">Dashboard</Link></li>
-
-<li><Link to="/admin/customers">Customers</Link></li>
-
-<li><Link to="/admin/orders">Orders</Link></li>
-
-<li><Link to="/admin/employees">Employees</Link></li>
-
-<li><Link to="/admin/reports">Reports</Link></li>
-
-</ul>
-
-</div>
-
-);
-
+  return (
+    <div className="sidebar">
+      <div className="sidebar-brand">
+        💧 AQUENIX
+      </div>
+      
+      <ul className="sidebar-menu">
+        {menuItems.map((item) => (
+          <li key={item.path}>
+            <Link 
+              to={item.path} 
+              className={location.pathname === item.path ? "active" : ""}
+            >
+              <span className="menu-icon">{item.icon}</span>
+              {item.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+      
+      <div className="sidebar-footer">
+        <p>Water Supply Management</p>
+      </div>
+    </div>
+  );
 }
 
 export default Sidebar;
+
