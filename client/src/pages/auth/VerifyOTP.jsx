@@ -60,20 +60,34 @@ function VerifyOTP() {
 
   return (
     <div className="auth-wrapper">
-      <div className="glass-card" style={{ maxWidth: "450px", width: "100%", padding: "40px" }}>
+
+      <div
+        className="glass-card"
+        style={{ maxWidth: "450px", width: "100%", padding: "40px" }}
+      >
+
         <div className="text-center mb-6">
+
           <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center text-primary mx-auto mb-4">
             <FiLock size={32} />
           </div>
+
           <h3 className="auth-title">Verify OTP</h3>
-          <p className="auth-subtitle">Enter the 6-digit code sent to your email</p>
+
+          <p className="auth-subtitle">
+            Enter the 6-digit code sent to your email
+          </p>
+
           <p className="text-sm text-gray-500 mt-2">{email}</p>
+
         </div>
 
         {error && <div className="alert alert-danger mb-4">{error}</div>}
 
         <form onSubmit={handleVerify}>
+
           <div className="mb-6">
+
             <OTPInput 
               value={otp} 
               onChange={setOtp} 
@@ -90,19 +104,22 @@ function VerifyOTP() {
                 marginRight: "8px"
               }}
             />
+
           </div>
 
           <button 
             type="submit" 
-            className="btn-primary w-100" 
+            className="btn-primary w-100"
             style={{ width: "100%" }}
             disabled={loading}
           >
             {loading ? "Verifying..." : "Verify OTP"}
           </button>
+
         </form>
 
         <div className="text-center mt-4">
+
           <p className="text-gray-600">
             Didn't receive the code?{" "}
             <button 
@@ -112,17 +129,23 @@ function VerifyOTP() {
               Resend OTP
             </button>
           </p>
+
         </div>
 
         <p className="text-center mt-4">
+
           <button 
             onClick={() => navigate("/login")}
             className="text-primary font-medium hover:underline bg-transparent border-none cursor-pointer"
           >
             Back to Login
           </button>
+
         </p>
+
       </div>
+
+    </div>
   );
 }
 
