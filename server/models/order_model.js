@@ -7,15 +7,24 @@ const orderSchema = new mongoose.Schema({
   address: { type: String, required: true },
   status: {
     type: String,
-    enum: ["Pending", "Out for Delivery", "Delivered", "Cancelled"],
+    enum: ["Pending", "Assigned", "Out for Delivery", "Delivered", "Cancelled"],
     default: "Pending"
   },
-  deliveryPerson: String,
+  deliveryPerson: { type: mongoose.Schema.Types.ObjectId, ref: "users" },
+  deliveryPersonName: String,
   scheduledTime: String,
   date: { type: String, default: new Date().toISOString().split('T')[0] },
   notes: String,
   amount: { type: Number, default: 0 },
+  trackingHistory: [
+    {
+      status: { type: String, required: true },
+      time: { type: Date, default: Date.now },
+      description: String
+    }
+  ],
   createdAt: { type: Date, default: Date.now }
 });
 
 export const OrderCollection = mongoose.model("orders", orderSchema);
+

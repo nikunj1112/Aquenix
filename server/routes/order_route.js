@@ -7,7 +7,9 @@ import {
   deleteOrder,
   assignDeliveryPerson,
   getOrderStats,
-  updateOrderStatus
+  updateOrderStatus,
+  getDeliveryPartnerOrders,
+  getDeliveryPartnerStats
 } from "../controllers/order_controller.js";
 import { protect } from "../middleware/auth_middleware.js";
 import { authorize } from "../middleware/role_middleware.js";
@@ -59,7 +61,7 @@ router.delete(
   deleteOrder
 );
 
-// Assign delivery person
+// Assign delivery person (admin only)
 router.put(
   "/assign-delivery/:id",
   protect,
@@ -67,7 +69,7 @@ router.put(
   assignDeliveryPerson
 );
 
-// Update order status (for delivery person)
+// Update order status (for delivery person and admin)
 router.put(
   "/update-status/:id",
   protect,
@@ -75,4 +77,21 @@ router.put(
   updateOrderStatus
 );
 
+// Get orders assigned to delivery partner
+router.get(
+  "/my-orders",
+  protect,
+  authorize("delivery"),
+  getDeliveryPartnerOrders
+);
+
+// Get delivery partner stats
+router.get(
+  "/delivery-stats",
+  protect,
+  authorize("delivery"),
+  getDeliveryPartnerStats
+);
+
 export default router;
+
