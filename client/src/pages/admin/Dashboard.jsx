@@ -1,43 +1,10 @@
+
 import { useState, useEffect } from "react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  PieChart,
-  Pie,
-  Cell
-} from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { FiUsers, FiShoppingCart, FiTruck, FiDollarSign, FiTrendingUp, FiClock } from "react-icons/fi";
-
-const monthlyData = [
-  { month: "Jan", orders: 65, revenue: 12500 },
-  { month: "Feb", orders: 80, revenue: 15800 },
-  { month: "Mar", orders: 95, revenue: 18200 },
-  { month: "Apr", orders: 110, revenue: 21500 },
-  { month: "May", orders: 125, revenue: 24800 },
-  { month: "Jun", orders: 145, revenue: 28900 },
-];
-
-const deliveryData = [
-  { name: "Delivered", value: 450 },
-  { name: "Pending", value: 85 },
-  { name: "In Progress", value: 35 },
-];
+import { getOrderStats, getCustomers, getEmployees } from "../../services/userService";
 
 const COLORS = ["#29a064", "#dfcb2a", "#392f97"];
-
-const stats = [
-  { title: "Total Customers", value: "1,234", icon: <FiUsers />, color: "bg-primary", change: "+12%" },
-  { title: "Total Orders", value: "3,456", icon: <FiShoppingCart />, color: "bg-secondary", change: "+8%" },
-  { title: "Total Deliveries", value: "2,890", icon: <FiTruck />, color: "bg-success", change: "+15%" },
-  { title: "Total Revenue", value: "$124,500", icon: <FiDollarSign />, color: "bg-accent2", change: "+23%" },
-];
 
 const tooltipStyle = {
   backgroundColor: 'white',
@@ -48,22 +15,84 @@ const tooltipStyle = {
 
 function Dashboard() {
   const [animate, setAnimate] = useState(false);
+  const [stats, setStats] = useState({
+    totalOrders: 0,
+    pendingOrders: 0,
+    deliveredOrders: 0,
+    totalRevenue: 0,
+    totalCustomers: 0,
+    totalEmployees: 0,
+    outForDelivery: 0
+  });
+  const [recentOrders, setRecentOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setAnimate(true);
+    fetchDashboardData();
   }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      const [orderRes, customerRes, employeeRes] = await Promise.all([
+        getOrderStats(),
+        getCustomers(),
+        getEmployees()
+      ]);
+
+      if (orderRes.data.success) {
+        const orderStats = orderRes.data.stats;
+        setStats({
+          totalOrders: orderStats.totalOrders || 0,
+          pendingOrders: orderStats.pendingOrders || 0,
+          outForDelivery: orderStats.outForDelivery || 0,
+          deliveredOrders: orderStats.deliveredOrders || 0,
+          totalRevenue: orderStats.totalRevenue || 0,
+          totalCustomers: customerRes.data.data?.length || 0,
+          totalEmployees: employeeRes.data.employees?.length || 0
+        });
+        setRecentOrders(orderStats.recentOrders || []);
+      }
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deliveryData = [
+    { name: "Delivered", value: stats.deliveredOrders },
+    { name: "Pending", value: stats.pendingOrders },
+    { name: "In Progress", value: stats.outForDelivery || 0 },
+  ];
+
+  const statCards = [
+    { title: "Total Customers", value: stats.totalCustomers, icon: <FiUsers />, color: "bg-primary", change: "+12%" },
+    { title: "Total Orders", value: stats.totalOrders, icon: <FiShoppingCart />, color: "bg-secondary", change: "+8%" },
+    { title: "Total Deliveries", value: stats.deliveredOrders, icon: <FiTruck />, color: "bg-success", change: "+15%" },
+    { title: "Total Revenue", value: `$${stats.totalRevenue.toLocaleString()}`, icon: <FiDollarSign />, color: "bg-accent2", change: "+23%" },
+  ];
+
+  if (loading) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-500">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">
-      {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-dark">Dashboard</h1>
         <p className="text-gray-500 mt-1">Welcome back! Here's what's happening today.</p>
       </div>
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {stats.map((stat, index) => (
+        {statCards.map((stat, index) => (
           <div 
             key={index}
             className="stat-card"
@@ -87,99 +116,104 @@ function Dashboard() {
         ))}
       </div>
 
-      {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        {/* Revenue Chart */}
-        <div className="glass-card p-6">
-          <h3 className="text-lg font-semibold mb-4">Monthly Revenue</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={monthlyData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-              <XAxis dataKey="month" stroke="#6c757d" />
-              <YAxis stroke="#6c757d" />
-              <Tooltip contentStyle={tooltipStyle} />
-              <Bar dataKey="revenue" fill="#392f97" radius={[8, 8, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Orders Chart */}
-        <div className="glass-card p-6">
-          <h3 className="text-lg font-semibold mb-4">Monthly Orders</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={monthlyData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-              <XAxis dataKey="month" stroke="#6c757d" />
-              <YAxis stroke="#6c757d" />
-              <Tooltip contentStyle={tooltipStyle} />
-              <Line 
-                type="monotone" 
-                dataKey="orders" 
-                stroke="#685bbc" 
-                strokeWidth={3}
-                dot={{ fill: '#685bbc', strokeWidth: 2, r: 6 }}
-                activeDot={{ r: 8 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Bottom Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Delivery Status */}
         <div className="glass-card p-6">
           <h3 className="text-lg font-semibold mb-4">Delivery Status</h3>
-          <ResponsiveContainer width="100%" height={200}>
+          <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
                 data={deliveryData}
                 cx="50%"
                 cy="50%"
-                innerRadius={50}
-                outerRadius={80}
+                innerRadius={60}
+                outerRadius={100}
                 paddingAngle={5}
                 dataKey="value"
+                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
               >
                 {deliveryData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip />
+              <Tooltip contentStyle={tooltipStyle} />
             </PieChart>
           </ResponsiveContainer>
-          <div className="flex justify-center gap-4 mt-4">
-            {deliveryData.map((entry, index) => (
-              <div key={index} className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index] }}></div>
-                <span className="text-sm text-gray-600">{entry.name}</span>
-              </div>
-            ))}
-          </div>
         </div>
 
-        {/* Recent Activity */}
-        <div className="glass-card p-6 lg:col-span-2">
-          <h3 className="text-lg font-semibold mb-4">Recent Activity</h3>
+        <div className="glass-card p-6">
+          <h3 className="text-lg font-semibold mb-4">Orders Overview</h3>
           <div className="space-y-4">
-            {[
-              { icon: <FiShoppingCart />, text: "New order #1234 received", time: "2 min ago", color: "text-primary" },
-              { icon: <FiTruck />, text: "Order #1230 delivered successfully", time: "15 min ago", color: "text-success" },
-              { icon: <FiUsers />, text: "New customer John Doe registered", time: "1 hour ago", color: "text-secondary" },
-              { icon: <FiClock />, text: "Order #1225 pending delivery", time: "2 hours ago", color: "text-warning" },
-            ].map((activity, index) => (
-              <div key={index} className="flex items-center gap-4 p-3 hover:bg-gray-50 rounded-lg transition-colors">
-                <div className={`p-2 rounded-lg bg-gray-100 ${activity.color}`}>
-                  {activity.icon}
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-success/10 text-success">
+                  <FiTruck />
                 </div>
-                <div className="flex-1">
-                  <p className="font-medium text-dark">{activity.text}</p>
-                  <p className="text-sm text-gray-500">{activity.time}</p>
-                </div>
+                <span className="font-medium">Delivered</span>
               </div>
-            ))}
+              <span className="font-bold text-success">{stats.deliveredOrders}</span>
+            </div>
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-warning/10 text-warning">
+                  <FiClock />
+                </div>
+                <span className="font-medium">Pending</span>
+              </div>
+              <span className="font-bold text-warning">{stats.pendingOrders}</span>
+            </div>
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                  <FiShoppingCart />
+                </div>
+                <span className="font-medium">In Progress</span>
+              </div>
+              <span className="font-bold text-primary">{stats.outForDelivery || 0}</span>
+            </div>
           </div>
         </div>
+      </div>
+
+      <div className="glass-card p-6">
+        <h3 className="text-lg font-semibold mb-4">Recent Orders</h3>
+        {recentOrders.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Customer</th>
+                  <th>Phone</th>
+                  <th>Address</th>
+                  <th>Status</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentOrders.map((order) => (
+                  <tr key={order._id}>
+                    <td className="font-medium">{order.customerName}</td>
+                    <td>{order.phone}</td>
+                    <td className="max-w-xs truncate">{order.address}</td>
+                    <td>
+                      <span className={`badge ${
+                        order.status === 'Delivered' ? 'badge-success' :
+                        order.status === 'Out for Delivery' ? 'badge-info' :
+                        'badge-warning'
+                      }`}>
+                        {order.status}
+                      </span>
+                    </td>
+                    <td>{new Date(order.createdAt).toLocaleDateString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="text-center py-8 text-gray-500">
+            No orders yet. Create your first order!
+          </div>
+        )}
       </div>
     </div>
   );

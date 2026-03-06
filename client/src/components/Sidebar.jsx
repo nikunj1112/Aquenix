@@ -55,7 +55,7 @@ function Sidebar() {
         ))}
       </ul>
       
-      <div className="sidebar-footer">
+      <div className="sidebar-footer justify-end">
         <p>Water Supply Management</p>
       </div>
     </div>

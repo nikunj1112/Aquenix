@@ -15,6 +15,11 @@ export const verifyOtp = (data) => {
   return API.post("/auth/verify-otp", data);
 };
 
+// ================= RESEND OTP =================
+export const resendOtp = (data) => {
+  return API.post("/auth/resend-otp", data);
+};
+
 // ================= FORGOT PASSWORD =================
 export const forgotPassword = (data) => {
   return API.post("/auth/forgot-password", data);

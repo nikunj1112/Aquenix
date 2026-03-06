@@ -165,3 +165,68 @@ export const assignDeliveryPerson = async (req, res) => {
     });
   }
 };
+
+// ================= GET ORDER STATISTICS =================
+export const getOrderStats = async (req, res) => {
+  try {
+    const totalOrders = await OrderCollection.countDocuments();
+    const pendingOrders = await OrderCollection.countDocuments({ status: "Pending" });
+    const outForDelivery = await OrderCollection.countDocuments({ status: "Out for Delivery" });
+    const deliveredOrders = await OrderCollection.countDocuments({ status: "Delivered" });
+    
+    const orders = await OrderCollection.find().sort({ createdAt: -1 }).limit(5);
+    
+    // Calculate revenue from delivered orders
+    const deliveredOrderDocs = await OrderCollection.find({ status: "Delivered" });
+    const totalRevenue = deliveredOrderDocs.reduce((sum, order) => sum + (order.amount || 0), 0);
+
+    res.json({
+      success: true,
+      stats: {
+        totalOrders,
+        pendingOrders,
+        outForDelivery,
+        deliveredOrders,
+        totalRevenue,
+        recentOrders: orders
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+// ================= UPDATE ORDER STATUS =================
+export const updateOrderStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const order = await OrderCollection.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true }
+    );
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found"
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Order status updated successfully",
+      data: order
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};

@@ -1,6 +1,7 @@
+
 import { useState, useEffect } from "react";
-import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiUser, FiMail, FiPhone, FiMapPin } from "react-icons/fi";
-import api from "../../utils/db.js";
+import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiUser, FiMail, FiPhone, FiMapPin, FiTruck } from "react-icons/fi";
+import { getEmployees, createEmployee, updateEmployee, deleteEmployee } from "../../services/userService";
 
 function Employees() {
   const [employees, setEmployees] = useState([]);
@@ -13,8 +14,10 @@ function Employees() {
     name: "",
     email: "",
     phone: "",
-    address: "",
-    role: "delivery"
+    password: "",
+    role: "delivery",
+    designation: "Delivery Boy",
+    area: ""
   });
 
   useEffect(() => {
@@ -23,16 +26,12 @@ function Employees() {
 
   const fetchEmployees = async () => {
     try {
-      const res = await api.get("/profile/get-all-users");
-      setEmployees(res.data.data || []);
+      const res = await getEmployees();
+      if (res.data.success) {
+        setEmployees(res.data.employees || []);
+      }
     } catch (error) {
-      console.log("Error fetching employees:", error);
-      // Mock data
-      setEmployees([
-        { _id: "1", name: "John Smith", email: "john@example.com", phone: "+1 234 567 8901", address: "123 Main St", role: "delivery", createdAt: "2024-01-01" },
-        { _id: "2", name: "Mike Wilson", email: "mike@example.com", phone: "+1 234 567 8902", address: "456 Oak Ave", role: "delivery", createdAt: "2024-01-05" },
-        { _id: "3", name: "Sarah Davis", email: "sarah@example.com", phone: "+1 234 567 8903", address: "789 Pine Rd", role: "admin", createdAt: "2024-01-10" },
-      ]);
+      console.error("Error fetching employees:", error);
     }
     setLoading(false);
   };
@@ -44,32 +43,31 @@ function Employees() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await api.post("/profile/add-user", formData);
-      fetchEmployees();
+      await createEmployee(formData);
+      await fetchEmployees();
       setShowModal(false);
-      setFormData({ name: "", email: "", phone: "", address: "", role: "delivery" });
+      setFormData({ name: "", email: "", phone: "", password: "", role: "delivery", designation: "Delivery Boy", area: "" });
     } catch (error) {
-      console.log("Error adding employee:", error);
+      alert(error.response?.data?.message || "Failed to create employee");
     }
   };
 
-  const deleteEmployee = async (email) => {
-    if (window.confirm("Are you sure you want to remove this employee?")) {
-      try {
-        await api.delete(`/profile/delete-user/${email}`);
-        fetchEmployees();
-      } catch (error) {
-        console.log("Error deleting employee:", error);
-      }
-    }
-  };
-
-  const updateRole = async (email, newRole) => {
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to remove this employee?")) return;
     try {
-      await api.put("/profile/update-role", { email, role: newRole });
-      fetchEmployees();
+      await deleteEmployee(id);
+      await fetchEmployees();
     } catch (error) {
-      console.log("Error updating role:", error);
+      alert(error.response?.data?.message || "Failed to delete employee");
+    }
+  };
+
+  const handleUpdateStatus = async (id, isActive) => {
+    try {
+      await updateEmployee(id, { isActive });
+      await fetchEmployees();
+    } catch (error) {
+      alert(error.response?.data?.message || "Failed to update employee");
     }
   };
 
@@ -81,6 +79,10 @@ function Employees() {
 
   const getRoleBadge = (role) => {
     return role === "admin" ? "badge badge-primary" : "badge badge-info";
+  };
+
+  const getStatusBadge = (isActive) => {
+    return isActive !== false ? "badge badge-success" : "badge badge-danger";
   };
 
   if (loading) {
@@ -103,7 +105,6 @@ function Employees() {
         </button>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="glass-card p-4">
           <div className="flex items-center gap-3">
@@ -133,14 +134,13 @@ function Employees() {
               <FiUser size={20} />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Admins</p>
-              <p className="text-xl font-bold">{employees.filter(e => e.role === "admin").length}</p>
+              <p className="text-sm text-gray-500">Active</p>
+              <p className="text-xl font-bold">{employees.filter(e => e.isActive !== false).length}</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Search */}
       <div className="glass-card p-4 mb-6">
         <div className="relative">
           <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -154,7 +154,6 @@ function Employees() {
         </div>
       </div>
 
-      {/* Employees Table */}
       <div className="glass-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="table">
@@ -163,8 +162,8 @@ function Employees() {
                 <th>Name</th>
                 <th>Email</th>
                 <th>Phone</th>
-                <th>Address</th>
                 <th>Role</th>
+                <th>Status</th>
                 <th>Joined</th>
                 <th>Actions</th>
               </tr>
@@ -175,41 +174,21 @@ function Employees() {
                   <td className="font-medium">{employee.name}</td>
                   <td>{employee.email}</td>
                   <td>{employee.phone || "N/A"}</td>
-                  <td>{employee.address || "N/A"}</td>
-                  <td>
-                    <span className={getRoleBadge(employee.role)}>{employee.role}</span>
-                  </td>
+                  <td><span className={getRoleBadge(employee.role)}>{employee.role}</span></td>
+                  <td><span className={getStatusBadge(employee.isActive)}>{employee.isActive !== false ? "Active" : "Inactive"}</span></td>
                   <td>{employee.createdAt ? new Date(employee.createdAt).toLocaleDateString() : "N/A"}</td>
                   <td>
                     <div className="flex gap-2">
-                      <button 
-                        onClick={() => setViewEmployee(employee)} 
-                        className="p-2 text-info hover:bg-info/10 rounded-lg"
-                      >
-                        <FiSearch />
-                      </button>
-                      <button 
-                        onClick={() => updateRole(employee.email, employee.role === "admin" ? "delivery" : "admin")}
-                        className="p-2 text-primary hover:bg-primary/10 rounded-lg"
-                        title="Toggle Role"
-                      >
-                        <FiEdit2 />
-                      </button>
-                      <button 
-                        onClick={() => deleteEmployee(employee.email)} 
-                        className="p-2 text-danger hover:bg-danger/10 rounded-lg"
-                      >
-                        <FiTrash2 />
-                      </button>
+                      <button onClick={() => setViewEmployee(employee)} className="p-2 text-info hover:bg-info/10 rounded-lg"><FiSearch /></button>
+                      <button onClick={() => handleUpdateStatus(employee._id, employee.isActive === false)} className="p-2 text-primary hover:bg-primary/10 rounded-lg" title="Toggle Status"><FiEdit2 /></button>
+                      <button onClick={() => handleDelete(employee._id)} className="p-2 text-danger hover:bg-danger/10 rounded-lg"><FiTrash2 /></button>
                     </div>
                   </td>
                 </tr>
               ))}
               {filteredEmployees.length === 0 && (
                 <tr>
-                  <td colSpan="7" className="text-center py-8 text-gray-500">
-                    No employees found
-                  </td>
+                  <td colSpan="7" className="text-center py-8 text-gray-500">No employees found</td>
                 </tr>
               )}
             </tbody>
@@ -217,84 +196,51 @@ function Employees() {
         </div>
       </div>
 
-      {/* Add Employee Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="glass-card w-full max-w-lg p-6">
+          <div className="glass-card w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
             <h3 className="text-xl font-semibold mb-4">Add New Employee</h3>
             <form onSubmit={handleSubmit}>
               <div className="mb-4">
-                <label className="form-label">Full Name</label>
-                <input 
-                  type="text" 
-                  name="name"
-                  className="form-control" 
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                />
+                <label className="form-label">Full Name *</label>
+                <input type="text" name="name" className="form-control" value={formData.name} onChange={handleChange} required />
               </div>
               <div className="mb-4">
-                <label className="form-label">Email</label>
-                <input 
-                  type="email" 
-                  name="email"
-                  className="form-control" 
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                />
+                <label className="form-label">Email *</label>
+                <input type="email" name="email" className="form-control" value={formData.email} onChange={handleChange} required />
               </div>
               <div className="mb-4">
-                <label className="form-label">Phone</label>
-                <input 
-                  type="tel" 
-                  name="phone"
-                  className="form-control" 
-                  value={formData.phone}
-                  onChange={handleChange}
-                />
+                <label className="form-label">Phone *</label>
+                <input type="tel" name="phone" className="form-control" value={formData.phone} onChange={handleChange} required />
               </div>
               <div className="mb-4">
-                <label className="form-label">Address</label>
-                <textarea 
-                  name="address"
-                  className="form-control" 
-                  rows="2"
-                  value={formData.address}
-                  onChange={handleChange}
-                />
+                <label className="form-label">Password *</label>
+                <input type="password" name="password" className="form-control" value={formData.password} onChange={handleChange} required />
               </div>
               <div className="mb-4">
                 <label className="form-label">Role</label>
-                <select 
-                  name="role"
-                  className="form-control"
-                  value={formData.role}
-                  onChange={handleChange}
-                >
+                <select name="role" className="form-control" value={formData.role} onChange={handleChange}>
                   <option value="delivery">Delivery Staff</option>
                   <option value="admin">Admin</option>
                 </select>
               </div>
+              <div className="mb-4">
+                <label className="form-label">Designation</label>
+                <input type="text" name="designation" className="form-control" value={formData.designation} onChange={handleChange} />
+              </div>
+              <div className="mb-4">
+                <label className="form-label">Area</label>
+                <input type="text" name="area" className="form-control" value={formData.area} onChange={handleChange} />
+              </div>
               <div className="flex gap-3 mt-6">
-                <button 
-                  type="button" 
-                  onClick={() => setShowModal(false)} 
-                  className="btn-secondary flex-1"
-                >
-                  Cancel
-                </button>
-                <button type="submit" className="btn-primary flex-1">
-                  Add Employee
-                </button>
+                <button type="button" onClick={() => setShowModal(false)} className="btn-secondary flex-1">Cancel</button>
+                <button type="submit" className="btn-primary flex-1">Add Employee</button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* View Employee Modal */}
       {viewEmployee && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="glass-card w-full max-w-lg p-6">
@@ -308,25 +254,10 @@ function Employees() {
               </div>
             </div>
             <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <FiMail className="text-primary" />
-                <span>{viewEmployee.email}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <FiPhone className="text-primary" />
-                <span>{viewEmployee.phone || "N/A"}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <FiMapPin className="text-primary" />
-                <span>{viewEmployee.address || "N/A"}</span>
-              </div>
+              <div className="flex items-center gap-3"><FiMail className="text-primary" /><span>{viewEmployee.email}</span></div>
+              <div className="flex items-center gap-3"><FiPhone className="text-primary" /><span>{viewEmployee.phone}</span></div>
             </div>
-            <button 
-              onClick={() => setViewEmployee(null)} 
-              className="btn-primary w-full mt-6"
-            >
-              Close
-            </button>
+            <button onClick={() => setViewEmployee(null)} className="btn-primary w-full mt-6">Close</button>
           </div>
         </div>
       )}

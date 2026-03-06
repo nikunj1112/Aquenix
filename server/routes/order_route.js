@@ -5,7 +5,9 @@ import {
   getAllOrders,
   getOrderById,
   deleteOrder,
-  assignDeliveryPerson
+  assignDeliveryPerson,
+  getOrderStats,
+  updateOrderStatus
 } from "../controllers/order_controller.js";
 import { protect } from "../middleware/auth_middleware.js";
 import { authorize } from "../middleware/role_middleware.js";
@@ -35,6 +37,13 @@ router.get(
   getAllOrders
 );
 
+// Get order stats (for dashboard)
+router.get(
+  "/stats",
+  protect,
+  getOrderStats
+);
+
 // Get order by id
 router.get(
   "/get-order/:id",
@@ -56,6 +65,14 @@ router.put(
   protect,
   authorize("admin"),
   assignDeliveryPerson
+);
+
+// Update order status (for delivery person)
+router.put(
+  "/update-status/:id",
+  protect,
+  authorize("admin", "delivery"),
+  updateOrderStatus
 );
 
 export default router;
