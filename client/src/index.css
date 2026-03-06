@@ -1,0 +1,68 @@
+:root{
+
+  --primary:#392f97;
+  --secondary:#685bbc;
+  --info:#807ce3;
+  --accent:#9550be;
+  
+  }
+  
+  body{
+  
+  background:#d7d2f4;
+  font-family: "Inter", sans-serif;
+  
+  }
+  
+  .auth-wrapper{
+  
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  
+  }
+  
+  .auth-card{
+  
+  width:420px;
+  padding:35px;
+  border-radius:14px;
+  
+  background:white;
+  
+  box-shadow:0 15px 35px rgba(0,0,0,0.08);
+  
+  animation:fadeIn .5s ease;
+  
+  }
+  
+  @keyframes fadeIn{
+  
+  from{opacity:0; transform:translateY(10px);}
+  to{opacity:1; transform:translateY(0);}
+  
+  }
+  
+  .btn-primary{
+  
+  background:var(--primary);
+  border:none;
+  
+  }
+  
+  .btn-primary:hover{
+  
+  background:#2c2278;
+  
+  }
+  
+  .password-toggle{
+  
+  position:absolute;
+  right:12px;
+  top:50%;
+  transform:translateY(-50%);
+  cursor:pointer;
+  
+  }
